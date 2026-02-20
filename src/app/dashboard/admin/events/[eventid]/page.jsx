@@ -25,7 +25,7 @@ import {
 } from 'recharts';
 import QRAttendanceSystem from "./AttendanceSystem";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const eventTypeColors = {
     HACKATHON: "bg-purple-500/20 text-purple-400 border-purple-500/30",

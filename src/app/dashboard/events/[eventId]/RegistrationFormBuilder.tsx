@@ -30,7 +30,7 @@ const FIELD_TYPES = [
     { id: "CHECKBOX", label: "Checkbox", icon: CheckSquare },
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 interface FormField {
     _id?: string;

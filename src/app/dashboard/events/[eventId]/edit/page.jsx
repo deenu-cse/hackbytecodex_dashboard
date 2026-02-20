@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const eventTypes = [
   { value: "HACKATHON", label: "Hackathon", icon: Trophy, color: "text-purple-400" },

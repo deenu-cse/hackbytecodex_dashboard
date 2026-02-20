@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const statusColors = {
   REGISTERED: "bg-blue-500/20 text-blue-400 border-blue-500/30",

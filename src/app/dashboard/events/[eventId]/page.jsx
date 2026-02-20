@@ -21,7 +21,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const eventTypeColors = {
   HACKATHON: "bg-purple-500/20 text-purple-400 border-purple-500/30",
@@ -316,7 +316,6 @@ export default function EventDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 mt-8">
-            {/* Hide all actions for students */}
             {isCollegeLead && (
               <>
                 <Link href={`/dashboard/events/${eventId}/edit`}>

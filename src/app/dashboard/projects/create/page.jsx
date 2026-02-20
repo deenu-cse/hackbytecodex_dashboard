@@ -46,7 +46,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const steps = [
     { id: "basic", label: "Basic Info", icon: Code2 },
