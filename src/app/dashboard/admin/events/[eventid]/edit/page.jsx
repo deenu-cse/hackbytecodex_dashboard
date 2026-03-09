@@ -72,6 +72,7 @@ const steps = [
     { id: "timeline", label: "Timeline", icon: CalendarDays },
     { id: "registration", label: "Registration", icon: Users },
     { id: "rewards", label: "Rewards", icon: Star },
+    { id: "externallinks", label: "External Links", icon: Globe },
     { id: "media", label: "Media", icon: ImageIcon },
     { id: "review", label: "Review", icon: Check },
 ];
@@ -129,6 +130,12 @@ export default function AdminEditEventPage() {
             organizer: 10,
             participant: 5
         },
+        externalLinks: {
+            website: "",
+            registration: "",
+            referralCode: "",
+            additionalInfo: {}
+        },
         banners: [],
         bannerPreviews: [],
         timeline: []
@@ -167,6 +174,13 @@ export default function AdminEditEventPage() {
                 const startDate = new Date(event.startDate);
                 const endDate = new Date(event.endDate);
                 const regLastDate = event.registration?.lastDate ? new Date(event.registration.lastDate) : null;
+                
+                console.log('=== Date Parsing Debug ===');
+                console.log('Event start:', event.startDate);
+                console.log('Parsed start:', startDate);
+                console.log('Reg deadline:', event.registration?.lastDate);
+                console.log('Parsed deadline:', regLastDate);
+                console.log('Deadline for input:', regLastDate ? regLastDate.toISOString().slice(0, 16) : '');
 
                 // Parse existing timeline
                 const existingTimeline = event.timeline || [];
@@ -189,7 +203,7 @@ export default function AdminEditEventPage() {
                     startTime: formatTimeForInput(event.startDate),
                     endDate: formatDateForInput(event.endDate),
                     endTime: formatTimeForInput(event.endDate),
-                    location: event.location || "",
+                    location: event.location?.name || "",
                     mode: event.mode || "",
                     status: event.status || "PUBLISHED",
                     registration: {
@@ -201,6 +215,12 @@ export default function AdminEditEventPage() {
                     rewardPoints: {
                         organizer: event.rewardPoints?.organizer || 10,
                         participant: event.rewardPoints?.participant || 5
+                    },
+                    externalLinks: {
+                        website: event.externalLinks?.website || "",
+                        registration: event.externalLinks?.registration || "",
+                        referralCode: event.externalLinks?.referralCode || "",
+                        additionalInfo: event.externalLinks?.additionalInfo || {}
                     },
                     banners: [],
                     bannerPreviews: [],
@@ -382,13 +402,38 @@ export default function AdminEditEventPage() {
         }
 
         if (step === "registration" && formData.registration.isOpen) {
-            if (!formData.registration.lastDate) {
-                newErrors.lastDate = "Registration deadline is required";
-            } else {
+            console.log('=== Registration Validation Debug ===');
+            console.log('Registration is open:', formData.registration.isOpen);
+            console.log('Last date value:', formData.registration.lastDate);
+            console.log('Last date trimmed:', formData.registration.lastDate?.trim());
+            
+            const isLoadedData = formData.registration.lastDate && 
+                                formData.registration.lastDate.includes('T') &&
+                                formData.registration.lastDate.length >= 16;
+            
+            if (formData.registration.lastDate && formData.registration.lastDate.trim() !== "" && !isLoadedData) {
                 const regClose = new Date(formData.registration.lastDate);
                 const eventStart = new Date(`${formData.startDate}T${formData.startTime}`);
-                if (regClose >= eventStart) newErrors.lastDate = "Must close before event starts";
+                
+                console.log('Validating NEW date entry');
+                console.log('Reg close date:', regClose);
+                console.log('Event start date:', eventStart);
+                console.log('Reg close timestamp:', regClose.getTime());
+                console.log('Event start timestamp:', eventStart.getTime());
+                console.log('Is reg close > event start?', regClose > eventStart);
+                
+                if (regClose > eventStart) {
+                    newErrors.lastDate = "Registration must close before or when event starts";
+                    console.log('❌ VALIDATION FAILED - Setting error');
+                } else {
+                    console.log('✅ VALIDATION PASSED - No error');
+                }
+            } else if (isLoadedData) {
+                console.log('✅ LOADED DATA - Skipping validation, allowing to proceed');
+            } else {
+                console.log('No deadline entered - allowing to proceed');
             }
+            // Allow proceeding in all cases except explicit validation errors
         }
 
         setErrors(newErrors);
@@ -397,8 +442,19 @@ export default function AdminEditEventPage() {
 
     const handleNext = () => {
         const currentIndex = steps.findIndex((s) => s.id === currentStep);
-        if (validateStep(currentStep) && currentIndex < steps.length - 1) {
+        console.log('=== handleNext Debug ===');
+        console.log('Current step:', currentStep);
+        console.log('Form data registration:', formData.registration);
+        
+        const isValid = validateStep(currentStep);
+        console.log('Validation result:', isValid);
+        console.log('Errors:', errors);
+        
+        if (isValid && currentIndex < steps.length - 1) {
+            console.log('Moving to next step:', steps[currentIndex + 1].id);
             setCurrentStep(steps[currentIndex + 1].id);
+        } else {
+            console.log('Cannot proceed - validation failed or last step');
         }
     };
 
@@ -517,6 +573,20 @@ export default function AdminEditEventPage() {
             }));
 
             submitData.append("rewardPoints", JSON.stringify(formData.rewardPoints));
+
+            // Add external links
+            if (formData.externalLinks.website) {
+                submitData.append("externalLinks[website]", formData.externalLinks.website);
+            }
+            if (formData.externalLinks.registration) {
+                submitData.append("externalLinks[registration]", formData.externalLinks.registration);
+            }
+            if (formData.externalLinks.referralCode) {
+                submitData.append("externalLinks[referralCode]", formData.externalLinks.referralCode);
+            }
+            if (formData.externalLinks.additionalInfo && Object.keys(formData.externalLinks.additionalInfo).length > 0) {
+                submitData.append("externalLinks[additionalInfo]", JSON.stringify(formData.externalLinks.additionalInfo));
+            }
 
             formData.banners.forEach(file => submitData.append("banners", file));
 
@@ -1002,6 +1072,199 @@ export default function AdminEditEventPage() {
                                 <Input type="number" value={formData.rewardPoints.participant}
                                     onChange={(e) => updateRewardPoints("participant", e.target.value)}
                                     className="mt-4 h-12 bg-black/20 border-blue-500/30 text-white text-2xl font-bold text-center" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Step 6: External Links */}
+                {currentStep === "externallinks" && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 rounded-xl bg-cyan-500/10">
+                                <Globe className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold text-white">External Links & Info</h3>
+                                <p className="text-sm text-gray-500">Add website, referral codes, and additional information</p>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="text-gray-300">Event Website URL</Label>
+                                <Input 
+                                    placeholder="https://your-event-website.com" 
+                                    value={formData.externalLinks.website}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        externalLinks: { ...prev.externalLinks, website: e.target.value }
+                                    }))}
+                                    className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-gray-300">Direct Registration Link</Label>
+                                <Input 
+                                    placeholder="https://forms.example.com/register" 
+                                    value={formData.externalLinks.registration}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        externalLinks: { ...prev.externalLinks, registration: e.target.value }
+                                    }))}
+                                    className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-gray-300">Referral Code</Label>
+                                <Input 
+                                    placeholder="REF2024" 
+                                    value={formData.externalLinks.referralCode}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        externalLinks: { ...prev.externalLinks, referralCode: e.target.value.toUpperCase() }
+                                    }))}
+                                    className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-gray-300">Additional Information</Label>
+                                <div className="space-y-2 mt-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Input 
+                                            placeholder="Key (e.g., Discord, Sponsor)" 
+                                            id="edit-info-key"
+                                            className="h-10 bg-white/5 border-white/10 text-white rounded-xl"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const keyInput = document.getElementById('edit-info-key');
+                                                    const valueInput = document.getElementById('edit-info-value');
+                                                    if (keyInput.value && valueInput.value) {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            externalLinks: {
+                                                                ...prev.externalLinks,
+                                                                additionalInfo: {
+                                                                    ...prev.externalLinks.additionalInfo,
+                                                                    [keyInput.value]: valueInput.value
+                                                                }
+                                                            }
+                                                        }));
+                                                        keyInput.value = '';
+                                                        valueInput.value = '';
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <Input 
+                                            placeholder="Value" 
+                                            id="edit-info-value"
+                                            className="h-10 bg-white/5 border-white/10 text-white rounded-xl"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    const keyInput = document.getElementById('edit-info-key');
+                                                    const valueInput = document.getElementById('edit-info-value');
+                                                    if (keyInput.value && valueInput.value) {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            externalLinks: {
+                                                                ...prev.externalLinks,
+                                                                additionalInfo: {
+                                                                    ...prev.externalLinks.additionalInfo,
+                                                                    [keyInput.value]: valueInput.value
+                                                                }
+                                                            }
+                                                        }));
+                                                        keyInput.value = '';
+                                                        valueInput.value = '';
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <Button 
+                                        type="button"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const keyInput = document.getElementById('edit-info-key');
+                                            const valueInput = document.getElementById('edit-info-value');
+                                            const keyValue = keyInput?.value?.trim();
+                                            const valueValue = valueInput?.value?.trim();
+                                            
+                                            console.log('=== Add Info Debug ===');
+                                            console.log('Key input element:', keyInput);
+                                            console.log('Value input element:', valueInput);
+                                            console.log('Key value:', keyValue);
+                                            console.log('Value value:', valueValue);
+                                            console.log('Current additionalInfo:', formData.externalLinks.additionalInfo);
+                                            
+                                            if (keyValue && valueValue) {
+                                                const newAdditionalInfo = {
+                                                    ...formData.externalLinks.additionalInfo,
+                                                    [keyValue]: valueValue
+                                                };
+                                                
+                                                console.log('New additionalInfo:', newAdditionalInfo);
+                                                
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    externalLinks: {
+                                                        ...prev.externalLinks,
+                                                        additionalInfo: newAdditionalInfo
+                                                    }
+                                                }));
+                                                
+                                                if (keyInput) keyInput.value = '';
+                                                if (valueInput) valueInput.value = '';
+                                                
+                                                
+                                            } else {
+                                                console.log('❌ Missing key or value');
+                                                console.log('Key empty?', !keyValue);
+                                                console.log('Value empty?', !valueValue);
+                                            }
+                                        }}
+                                        className="w-full border-dashed border-white/20 text-gray-400 rounded-xl"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" /> Add Info
+                                    </Button>
+                                </div>
+                                
+                                {formData.externalLinks.additionalInfo && Object.keys(formData.externalLinks.additionalInfo).length > 0 && (
+                                    <div className="space-y-2 mt-4">
+                                        {Object.entries(formData.externalLinks.additionalInfo).map(([key, value], idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                                                <div>
+                                                    <span className="text-sm font-medium text-cyan-400">{key}:</span>
+                                                    <span className="text-sm text-gray-300 ml-2">{value}</span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        const newInfo = { ...formData.externalLinks.additionalInfo };
+                                                        delete newInfo[key];
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            externalLinks: { ...prev.externalLinks, additionalInfo: newInfo }
+                                                        }));
+                                                    }}
+                                                    className="text-red-400 hover:bg-red-500/10 h-8 w-8 p-0"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

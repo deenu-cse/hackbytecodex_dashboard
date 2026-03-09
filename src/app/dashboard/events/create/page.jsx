@@ -66,6 +66,7 @@ const steps = [
   { id: "schedule", label: "Schedule", icon: Calendar },
   { id: "timeline", label: "Timeline", icon: CalendarDays },
   { id: "registration", label: "Registration", icon: Users },
+  { id: "externallinks", label: "External Links", icon: Globe },
   { id: "media", label: "Media", icon: ImageIcon },
   { id: "review", label: "Review", icon: Check },
 ];
@@ -108,6 +109,12 @@ export default function AddEventPage() {
       lastDate: "",
       limit: "",
       fee: 0,
+    },
+    externalLinks: {
+      website: "",
+      registration: "",
+      referralCode: "",
+      additionalInfo: {}
     },
     banners: [],
     bannerPreviews: [],
@@ -527,6 +534,20 @@ export default function AddEventPage() {
           date: new Date(day.date).toISOString()
         }));
         submitData.append("timeline", JSON.stringify(timelineData));
+      }
+
+      // Add external links
+      if (formData.externalLinks.website) {
+        submitData.append("externalLinks[website]", formData.externalLinks.website);
+      }
+      if (formData.externalLinks.registration) {
+        submitData.append("externalLinks[registration]", formData.externalLinks.registration);
+      }
+      if (formData.externalLinks.referralCode) {
+        submitData.append("externalLinks[referralCode]", formData.externalLinks.referralCode);
+      }
+      if (formData.externalLinks.additionalInfo && Object.keys(formData.externalLinks.additionalInfo).length > 0) {
+        submitData.append("externalLinks[additionalInfo]", JSON.stringify(formData.externalLinks.additionalInfo));
       }
 
       formData.banners.forEach((file) => {
@@ -1333,6 +1354,134 @@ export default function AddEventPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {currentStep === "externallinks" && (
+          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 rounded-xl bg-cyan-500/10">
+                <Globe className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">External Links & Info</h3>
+                <p className="text-sm text-gray-500">Add website, referral codes, and additional information</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <Label className="text-gray-300">Event Website URL</Label>
+                <Input 
+                  placeholder="https://your-event-website.com" 
+                  value={formData.externalLinks.website}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    externalLinks: { ...prev.externalLinks, website: e.target.value }
+                  }))}
+                  className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-300">Direct Registration Link</Label>
+                <Input 
+                  placeholder="https://forms.example.com/register" 
+                  value={formData.externalLinks.registration}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    externalLinks: { ...prev.externalLinks, registration: e.target.value }
+                  }))}
+                  className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-300">Referral Code</Label>
+                <Input 
+                  placeholder="REF2024" 
+                  value={formData.externalLinks.referralCode}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    externalLinks: { ...prev.externalLinks, referralCode: e.target.value.toUpperCase() }
+                  }))}
+                  className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl"
+                />
+              </div>
+
+              <div>
+                <Label className="text-gray-300">Additional Information</Label>
+                <div className="space-y-2 mt-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input 
+                      placeholder="Key (e.g., Discord, Sponsor)" 
+                      id="info-key"
+                      className="h-10 bg-white/5 border-white/10 text-white rounded-xl"
+                    />
+                    <Input 
+                      placeholder="Value" 
+                      id="info-value"
+                      className="h-10 bg-white/5 border-white/10 text-white rounded-xl"
+                    />
+                  </div>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const keyInput = document.getElementById('info-key');
+                      const valueInput = document.getElementById('info-value');
+                      if (keyInput.value && valueInput.value) {
+                        setFormData(prev => ({
+                          ...prev,
+                          externalLinks: {
+                            ...prev.externalLinks,
+                            additionalInfo: {
+                              ...prev.externalLinks.additionalInfo,
+                              [keyInput.value]: valueInput.value
+                            }
+                          }
+                        }));
+                        keyInput.value = '';
+                        valueInput.value = '';
+                      }
+                    }}
+                    className="w-full border-dashed border-white/20 text-gray-400 rounded-xl"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Add Info
+                  </Button>
+                </div>
+                
+                {/* Display added info */}
+                {formData.externalLinks.additionalInfo && Object.keys(formData.externalLinks.additionalInfo).length > 0 && (
+                  <div className="space-y-2 mt-4">
+                    {Object.entries(formData.externalLinks.additionalInfo).map(([key, value], idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                        <div>
+                          <span className="text-sm font-medium text-cyan-400">{key}:</span>
+                          <span className="text-sm text-gray-300 ml-2">{value}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newInfo = { ...formData.externalLinks.additionalInfo };
+                            delete newInfo[key];
+                            setFormData(prev => ({
+                              ...prev,
+                              externalLinks: { ...prev.externalLinks, additionalInfo: newInfo }
+                            }));
+                          }}
+                          className="text-red-400 hover:bg-red-500/10 h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

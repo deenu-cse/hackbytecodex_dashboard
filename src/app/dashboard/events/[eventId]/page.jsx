@@ -558,11 +558,9 @@ export default function EventDetailPage() {
           </div>
         </TabsContent>
 
-        {isCollegeLead && (
           <TabsContent value="form" className="mt-6">
             <RegistrationFormBuilder eventId={eventId} event={event} token={localStorage.getItem("codexdashtoken") || ""} />
           </TabsContent>
-        )}
         <TabsContent value="timeline" className="mt-6 space-y-6">
           <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-8">
             <div className="flex items-center justify-between mb-8">
