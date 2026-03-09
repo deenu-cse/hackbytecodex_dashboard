@@ -46,6 +46,7 @@ const getNavigation = (role, user) => {
     SUPER_ADMIN: [
       { name: "All Colleges", href: "/dashboard/colleges", icon: GraduationCap },
       { name: "Admin Events", href: "/dashboard/admin/events", icon: Calendar },
+      { name: "Users", href: "/dashboard/admin/users", icon: Users },
       // TODO: Implement core team management page
       // { name: "Core Team", href: "/dashboard/team", icon: Shield },
       // TODO: Implement analytics dashboard
