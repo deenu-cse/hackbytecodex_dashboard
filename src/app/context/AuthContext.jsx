@@ -7,6 +7,22 @@ const AuthContext = createContext();
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
+async function fetchMeProfile(token) {
+  const response = await fetch(`${API_URL}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    localStorage.removeItem("codexdashtoken");
+    return null;
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,20 +34,8 @@ export function AuthProvider({ children }) {
       const codexdashtoken = localStorage.getItem("codexdashtoken");
       if (codexdashtoken) {
         try {
-          const response = await fetch(`${API_URL}/auth/me`, {
-            headers: {
-              Authorization: `Bearer ${codexdashtoken}`,
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.data);
-          } else {
-            // Token expired or invalid - clear it
-            localStorage.removeItem("codexdashtoken");
-            setUser(null);
-          }
+          const profile = await fetchMeProfile(codexdashtoken);
+          setUser(profile);
         } catch (err) {
           console.error("Auth init error:", err);
           localStorage.removeItem("codexdashtoken");
@@ -47,7 +51,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -62,11 +66,22 @@ export function AuthProvider({ children }) {
       }
 
       localStorage.setItem("codexdashtoken", data.token);
-      setUser(data.user);
+      let profile;
+      try {
+        profile = await fetchMeProfile(data.token);
+      } catch (meErr) {
+        localStorage.removeItem("codexdashtoken");
+        throw meErr;
+      }
+      if (!profile) {
+        throw new Error("Could not load your profile. Please try again.");
+      }
+      setUser(profile);
       router.push("/dashboard");
       return { success: true };
     } catch (err) {
       setError(err.message);
+      setUser(null);
       return { success: false, error: err.message };
     } finally {
       setLoading(false);
