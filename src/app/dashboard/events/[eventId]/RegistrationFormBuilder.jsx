@@ -189,7 +189,11 @@ export default function RegistrationFormBuilder({ eventId, event, token }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/events/${eventId}/updateform`, {
+      const endpoint = formExists 
+        ? `${API_URL}/events/${eventId}/updateform`
+        : `${API_URL}/events/${eventId}/add-event-form`;
+
+      const response = await fetch(endpoint, {
         method: formExists ? "PUT" : "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -274,7 +274,7 @@ export default function AddEventPage() {
             description: "",
             startTime: "09:00",
             endTime: "17:00",
-            location: formData.location || ""
+            location: formData.mode === "ONLINE" ? "Online" : (formData.location?.name || "")
           }
         ]
       });
@@ -1627,7 +1627,7 @@ export default function AddEventPage() {
                   <div className="flex justify-between py-2 border-b border-white/5">
                     <span className="text-gray-500">Location</span>
                     <span className="text-white">
-                      {formData.location || "Online"}
+                      {formData.mode === "ONLINE" ? "Online" : (formData.location?.name || "—")}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-white/5">

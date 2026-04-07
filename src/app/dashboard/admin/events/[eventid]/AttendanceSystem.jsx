@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  QrCode, X, Clock, RefreshCw, Loader2, AlertCircle, 
+  QrCode, X, Clock, RefreshCw, Loader2, AlertCircle,
   Smartphone, ScanLine, Crosshair, MapPin, Check, Eye,
-  Search, Filter, Download, CheckCircle2, XCircle, 
+  Search, Filter, Download, CheckCircle2, XCircle,
   Calendar, CreditCard, DollarSign, Users, ArrowLeft,
   Mail, Phone, MoreHorizontal
 } from "lucide-react";
@@ -33,14 +33,14 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterPayment, setFilterPayment] = useState("ALL");
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  
+
   // QR Modal states
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrToken, setQrToken] = useState("");
@@ -48,10 +48,10 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState(null);
   const [timeLeft, setTimeLeft] = useState(50);
-  
+
   // Detail modal
   const [showDetailModal, setShowDetailModal] = useState(null);
-  
+
   const qrIntervalRef = useRef(null);
   const countdownRef = useRef(null);
 
@@ -126,12 +126,13 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
 
       setQrToken(data.token);
 
-      const qrData = await QRCode.toDataURL(data.token, {
+      const qrUrl = `https://www.hackbytecodex.com/attendance/qr?token=${data.token}`;
+      const qrData = await QRCode.toDataURL(qrUrl, {
         width: 300,
         margin: 2,
         color: {
-          dark: '#000000',    
-          light: '#ffffff'    
+          dark: '#000000',
+          light: '#ffffff'
         },
         errorCorrectionLevel: 'H'
       });
@@ -257,7 +258,7 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
 
       if (!response.ok) throw new Error("Failed to update attendance");
 
-      setRegistrations(prev => prev.map(r => 
+      setRegistrations(prev => prev.map(r =>
         r._id === id ? { ...r, attendance: attended, attendanceMarked: attended } : r
       ));
     } catch (err) {
@@ -501,11 +502,10 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
                     <td className="p-4">
                       <button
                         onClick={() => markAttendance(reg._id, !isCheckedIn(reg))}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                          isCheckedIn(reg)
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-white/5 text-gray-500 hover:bg-white/10'
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isCheckedIn(reg)
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                          }`}
                       >
                         <Check className={`w-5 h-5 ${isCheckedIn(reg) ? 'opacity-100' : 'opacity-0'}`} />
                       </button>
@@ -561,11 +561,10 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
             <button
               key={page}
               onClick={() => fetchEventAndRegistrations(page)}
-              className={`w-10 h-10 rounded-xl font-medium transition-colors ${
-                pagination.page === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
+              className={`w-10 h-10 rounded-xl font-medium transition-colors ${pagination.page === page
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
             >
               {page}
             </button>
@@ -573,11 +572,10 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
         </div>
       )}
 
-      {/* QR Code Modal */}
       {showQRModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={handleCloseQR}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm overflow-y-auto py-8" onClick={handleCloseQR}>
           <div
-            className="w-full max-w-md rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto scrollbar-hide"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -598,7 +596,6 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
               </button>
             </div>
 
-            {/* QR Display */}
             <div className="flex flex-col items-center">
               <div className="relative p-6 rounded-2xl bg-white border-4 border-blue-500/20">
                 {qrLoading ? (
@@ -626,7 +623,6 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
                       alt="Attendance QR Code"
                       className="w-[300px] h-[300px]"
                     />
-                    {/* Corner markers for scanning */}
                     <div className="absolute top-4 left-4 w-8 h-8 border-l-4 border-t-4 border-blue-500 rounded-tl-lg" />
                     <div className="absolute top-4 right-4 w-8 h-8 border-r-4 border-t-4 border-blue-500 rounded-tr-lg" />
                     <div className="absolute bottom-4 left-4 w-8 h-8 border-l-4 border-b-4 border-blue-500 rounded-bl-lg" />
@@ -685,8 +681,11 @@ export default function QRAttendanceSystem({ eventId, isSuperAdmin = false }) {
 
       {/* Detail Modal */}
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowDetailModal(null)}>
-          <div className="w-full max-w-2xl rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto py-8" onClick={() => setShowDetailModal(null)}>
+          <div
+            className="w-full max-w-2xl rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto scrollbar-hide"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white">

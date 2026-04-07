@@ -128,12 +128,13 @@ export default function EventRegistrationsPage() {
 
       setQrToken(data.token);
 
-      const qrData = await QRCode.toDataURL(data.token, {
+      const qrUrl = `https://www.hackbytecodex.com/attendance/qr?token=${data.token}`;
+      const qrData = await QRCode.toDataURL(qrUrl, {
         width: 300,
         margin: 2,
         color: {
-          dark: '#000000',    
-          light: '#ffffff'    
+          dark: '#000000',
+          light: '#ffffff'
         },
         errorCorrectionLevel: 'H'
       });
@@ -501,8 +502,8 @@ export default function EventRegistrationsPage() {
                       <button
                         onClick={() => markAttendance(reg._id, !reg.attendance?.marked)}
                         className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${reg.attendance?.marked
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-white/5 text-gray-500 hover:bg-white/10'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-white/5 text-gray-500 hover:bg-white/10'
                           }`}
                       >
                         <Check className={`w-5 h-5 ${reg.attendance?.marked ? 'opacity-100' : 'opacity-0'}`} />
@@ -561,8 +562,8 @@ export default function EventRegistrationsPage() {
               key={page}
               onClick={() => fetchEventAndRegistrations(page)}
               className={`w-10 h-10 rounded-xl font-medium transition-colors ${pagination.page === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
             >
               {page}
@@ -571,11 +572,10 @@ export default function EventRegistrationsPage() {
         </div>
       )}
 
-      {/* QR Code Modal */}
       {showQRModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm" onClick={handleCloseQR}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm overflow-y-auto py-8" onClick={handleCloseQR}>
           <div
-            className="w-full max-w-md rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto scrollbar-hide"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
@@ -624,7 +624,6 @@ export default function EventRegistrationsPage() {
                       alt="Attendance QR Code"
                       className="w-[300px] h-[300px]"
                     />
-                    {/* Corner markers for scanning */}
                     <div className="absolute top-4 left-4 w-8 h-8 border-l-4 border-t-4 border-blue-500 rounded-tl-lg" />
                     <div className="absolute top-4 right-4 w-8 h-8 border-r-4 border-t-4 border-blue-500 rounded-tr-lg" />
                     <div className="absolute bottom-4 left-4 w-8 h-8 border-l-4 border-b-4 border-blue-500 rounded-bl-lg" />
@@ -639,12 +638,6 @@ export default function EventRegistrationsPage() {
                   <span className="text-sm font-medium text-blue-400">
                     Refreshes in {timeLeft}s
                   </span>
-                </div>
-                <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-linear"
-                    style={{ width: `${(timeLeft / 50) * 100}%` }}
-                  />
                 </div>
               </div>
 
@@ -683,8 +676,11 @@ export default function EventRegistrationsPage() {
 
       {/* Detail Modal */}
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowDetailModal(null)}>
-          <div className="w-full max-w-2xl rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto py-8" onClick={() => setShowDetailModal(null)}>
+          <div
+            className="w-full max-w-2xl rounded-3xl bg-[#0f0f0f] border border-white/10 p-8 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto scrollbar-hide"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold text-white">

@@ -21,23 +21,23 @@ import Link from "next/link";
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 const getTierColor = (tier) => {
-  const colors = {
-    BRONZE: "from-orange-600 to-orange-400",
-    SILVER: "from-gray-400 to-gray-300",
-    GOLD: "from-yellow-500 to-yellow-300",
-    PLATINUM: "from-cyan-500 to-blue-400"
-  };
-  return colors[tier] || colors.BRONZE;
+    const colors = {
+        BRONZE: "from-orange-600 to-orange-400",
+        SILVER: "from-gray-400 to-gray-300",
+        GOLD: "from-yellow-500 to-yellow-300",
+        PLATINUM: "from-cyan-500 to-blue-400"
+    };
+    return colors[tier] || colors.BRONZE;
 };
 
 const getTierBgColor = (tier) => {
-  const colors = {
-    BRONZE: "from-orange-600/20 to-orange-400/20 border-orange-500/30 text-orange-400",
-    SILVER: "from-gray-400/20 to-gray-300/20 border-gray-400/30 text-gray-300",
-    GOLD: "from-yellow-500/20 to-yellow-300/20 border-yellow-500/30 text-yellow-400",
-    PLATINUM: "from-cyan-500/20 to-blue-400/20 border-cyan-500/30 text-cyan-400"
-  };
-  return colors[tier] || colors.BRONZE;
+    const colors = {
+        BRONZE: "from-orange-600/20 to-orange-400/20 border-orange-500/30 text-orange-400",
+        SILVER: "from-gray-400/20 to-gray-300/20 border-gray-400/30 text-gray-300",
+        GOLD: "from-yellow-500/20 to-yellow-300/20 border-yellow-500/30 text-yellow-400",
+        PLATINUM: "from-cyan-500/20 to-blue-400/20 border-cyan-500/30 text-cyan-400"
+    };
+    return colors[tier] || colors.BRONZE;
 };
 
 export default function ClubDetailPage() {
@@ -45,17 +45,17 @@ export default function ClubDetailPage() {
     const { isCollegeLead, isAuthenticated } = useAuth();
     const router = useRouter();
     const canManage = isCollegeLead;
-    
+
     const [activeTab, setActiveTab] = useState("overview");
     const [club, setClub] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [isAssignAdminOpen, setIsAssignAdminOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
-    
+
     const [members, setMembers] = useState([]);
     const [membersLoading, setMembersLoading] = useState(false);
     const [membersSearch, setMembersSearch] = useState("");
@@ -89,10 +89,10 @@ export default function ClubDetailPage() {
             }
 
             const data = await response.json();
-            
+
             if (data.success) {
                 setClub(data.data);
-                setInviteLink(`${window.location.origin}/clubs/${data.data.code}/join`);
+                setInviteLink(`https://www.hackbytecodex.com/clubs/${data.data.code}/join`);
             } else {
                 throw new Error(data.message || "Failed to fetch club");
             }
@@ -106,11 +106,11 @@ export default function ClubDetailPage() {
 
     const fetchMembers = useCallback(async () => {
         if (!club?._id) return;
-        
+
         try {
             setMembersLoading(true);
             const token = localStorage.getItem("codexdashtoken");
-            
+
             const params = new URLSearchParams({
                 ...(membersSearch && { search: membersSearch }),
                 limit: "50"
@@ -169,7 +169,7 @@ export default function ClubDetailPage() {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
@@ -185,7 +185,7 @@ export default function ClubDetailPage() {
         try {
             setAssigningAdmin(true);
             const token = localStorage.getItem("codexdashtoken");
-            
+
             const response = await fetch(`${API_URL}/clubs/${club._id}/admins`, {
                 method: "POST",
                 headers: {
@@ -431,9 +431,8 @@ export default function ClubDetailPage() {
                             {club.recentEvents?.length > 0 ? club.recentEvents.map((event, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/5">
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                                            event.status === "PUBLISHED" ? "bg-blue-500/10 text-blue-400" : "bg-green-500/10 text-green-400"
-                                        }`}>
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${event.status === "PUBLISHED" ? "bg-blue-500/10 text-blue-400" : "bg-green-500/10 text-green-400"
+                                            }`}>
                                             <Calendar className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -539,48 +538,48 @@ export default function ClubDetailPage() {
                             </DialogDescription>
                         </DialogHeader>
 
-                    <div className="space-y-6 mt-4">
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getTierColor(club.performance?.tier || "BRONZE")} p-0.5`}>
-                                    <div className="w-full h-full rounded-xl bg-[#0f0f0f] flex items-center justify-center text-sm font-bold text-white">
-                                        {club.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                        <div className="space-y-6 mt-4">
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getTierColor(club.performance?.tier || "BRONZE")} p-0.5`}>
+                                        <div className="w-full h-full rounded-xl bg-[#0f0f0f] flex items-center justify-center text-sm font-bold text-white">
+                                            {club.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-medium">{club.name}</p>
+                                        <p className="text-sm text-gray-500">{club.code}</p>
                                     </div>
                                 </div>
-                                <div>
-                                    <p className="text-white font-medium">{club.name}</p>
-                                    <p className="text-sm text-gray-500">{club.code}</p>
+
+                                <div className="flex items-center gap-2 p-3 rounded-xl bg-black/30 border border-white/10">
+                                    <input
+                                        type="text"
+                                        value={inviteLink}
+                                        readOnly
+                                        className="flex-1 bg-transparent text-sm text-gray-300 outline-none"
+                                    />
+                                    <Button
+                                        size="sm"
+                                        onClick={copyInviteLink}
+                                        className={copied ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
+                                    >
+                                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                    </Button>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 p-3 rounded-xl bg-black/30 border border-white/10">
-                                <input
-                                    type="text"
-                                    value={inviteLink}
-                                    readOnly
-                                    className="flex-1 bg-transparent text-sm text-gray-300 outline-none"
-                                />
+                            <div className="pt-4 border-t border-white/10">
                                 <Button
-                                    size="sm"
-                                    onClick={copyInviteLink}
-                                    className={copied ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
+                                    variant="ghost"
+                                    onClick={generateNewLink}
+                                    className="w-full text-gray-400 hover:text-white"
                                 >
-                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                    <Zap className="w-4 h-4 mr-2" />
+                                    Generate New Link
                                 </Button>
                             </div>
                         </div>
-
-                        <div className="pt-4 border-t border-white/10">
-                            <Button
-                                variant="ghost"
-                                onClick={generateNewLink}
-                                className="w-full text-gray-400 hover:text-white"
-                            >
-                                <Zap className="w-4 h-4 mr-2" />
-                                Generate New Link
-                            </Button>
-                        </div>
-                    </div>
                     </DialogContent>
                 </Dialog>
             )}
@@ -599,49 +598,49 @@ export default function ClubDetailPage() {
                             </DialogDescription>
                         </DialogHeader>
 
-                    <div className="mt-4 space-y-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                            <Input
-                                placeholder="Search members..."
-                                value={membersSearch}
-                                onChange={(e) => setMembersSearch(e.target.value)}
-                                className="pl-10 bg-white/5 border-white/10 text-white"
-                            />
-                        </div>
-
-                        <ScrollArea className="max-h-[300px]">
-                            <div className="space-y-2">
-                                {membersLoading ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-                                    </div>
-                                ) : members.length === 0 ? (
-                                    <p className="text-gray-500 text-center py-8">No eligible members found</p>
-                                ) : (
-                                    members.map((member, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold text-white">
-                                                {member.fullName?.split(" ").map(n => n[0]).join("") || "M"}
-                                            </div>
-                                            <div className="flex-1">
-                                                <h4 className="text-white font-medium">{member.fullName}</h4>
-                                                <p className="text-sm text-gray-400">{member.email}</p>
-                                            </div>
-                                            <Button 
-                                                size="sm" 
-                                                className="bg-blue-600 hover:bg-blue-700 rounded-lg"
-                                                onClick={() => handleAssignAdmin(member._id)}
-                                                disabled={assigningAdmin}
-                                            >
-                                                {assigningAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : "Assign"}
-                                            </Button>
-                                        </div>
-                                    ))
-                                )}
+                        <div className="mt-4 space-y-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <Input
+                                    placeholder="Search members..."
+                                    value={membersSearch}
+                                    onChange={(e) => setMembersSearch(e.target.value)}
+                                    className="pl-10 bg-white/5 border-white/10 text-white"
+                                />
                             </div>
-                        </ScrollArea>
-                    </div>
+
+                            <ScrollArea className="max-h-[300px]">
+                                <div className="space-y-2">
+                                    {membersLoading ? (
+                                        <div className="flex items-center justify-center py-8">
+                                            <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                                        </div>
+                                    ) : members.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-8">No eligible members found</p>
+                                    ) : (
+                                        members.map((member, idx) => (
+                                            <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold text-white">
+                                                    {member.fullName?.split(" ").map(n => n[0]).join("") || "M"}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="text-white font-medium">{member.fullName}</h4>
+                                                    <p className="text-sm text-gray-400">{member.email}</p>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-blue-600 hover:bg-blue-700 rounded-lg"
+                                                    onClick={() => handleAssignAdmin(member._id)}
+                                                    disabled={assigningAdmin}
+                                                >
+                                                    {assigningAdmin ? <Loader2 className="w-4 h-4 animate-spin" /> : "Assign"}
+                                                </Button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
                     </DialogContent>
                 </Dialog>
             )}
