@@ -447,7 +447,13 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <Link href="/dashboard/colleges">
+                  <Link href={
+                    user?.college?.collegeId?.code
+                      ? `/dashboard/colleges/${user.college.collegeId.code}`
+                      : isSuperAdmin
+                        ? "/dashboard/colleges"
+                        : "/dashboard"
+                  }>
                     <Button className="w-full mt-4 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl">
                       View Chapter
                       <ChevronRight className="w-4 h-4 ml-2" />

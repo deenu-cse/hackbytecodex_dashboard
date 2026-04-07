@@ -56,10 +56,27 @@ export default function ClubDetailPage() {
     const [copied, setCopied] = useState(false);
     const [inviteLink, setInviteLink] = useState("");
 
-    const [members, setMembers] = useState([]);
+    const [membersData, setMembersData] = useState([]);
     const [membersLoading, setMembersLoading] = useState(false);
     const [membersSearch, setMembersSearch] = useState("");
+    const [membersPagination, setMembersPagination] = useState({ page: 1, pages: 1, total: 0, limit: 12 });
     const [assigningAdmin, setAssigningAdmin] = useState(false);
+
+    const [eventsData, setEventsData] = useState([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [eventsSearch, setEventsSearch] = useState("");
+    const [eventsType, setEventsType] = useState("ALL");
+    const [eventsStatus, setEventsStatus] = useState("ALL");
+    const [eventsPagination, setEventsPagination] = useState({ page: 1, pages: 1, total: 0, limit: 9 });
+
+    const [isRewardDialogOpen, setIsRewardDialogOpen] = useState(false);
+    const [rewardForm, setRewardForm] = useState({ points: "", title: "", reason: "" });
+    const [awardingReward, setAwardingReward] = useState(false);
+
+    // Old members state used for Admin Assignment
+    const [adminAssigMembers, setAdminAssignMembers] = useState([]);
+    const [adminAssignMembersLoading, setAdminAssignMembersLoading] = useState(false);
+    const [adminAssignMembersSearch, setAdminAssignMembersSearch] = useState("");
 
     const fetchClubDetails = useCallback(async () => {
         try {
@@ -104,15 +121,15 @@ export default function ClubDetailPage() {
         }
     }, [clubId, router]);
 
-    const fetchMembers = useCallback(async () => {
+    const fetchAdminAssignMembers = useCallback(async () => {
         if (!club?._id) return;
 
         try {
-            setMembersLoading(true);
+            setAdminAssignMembersLoading(true);
             const token = localStorage.getItem("codexdashtoken");
 
             const params = new URLSearchParams({
-                ...(membersSearch && { search: membersSearch }),
+                ...(adminAssignMembersSearch && { search: adminAssignMembersSearch }),
                 limit: "50"
             });
 
@@ -128,14 +145,14 @@ export default function ClubDetailPage() {
             const data = await response.json();
             if (data.success) {
                 const adminIds = club.admins?.map(a => a._id.toString()) || [];
-                setMembers(data.data.filter(m => !adminIds.includes(m._id.toString())));
+                setAdminAssignMembers(data.data.filter(m => !adminIds.includes(m._id.toString())));
             }
         } catch (err) {
             console.error("Fetch members error:", err);
         } finally {
-            setMembersLoading(false);
+            setAdminAssignMembersLoading(false);
         }
-    }, [club?._id, membersSearch, club?.admins]);
+    }, [club?._id, adminAssignMembersSearch, club?.admins]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -152,9 +169,108 @@ export default function ClubDetailPage() {
 
     useEffect(() => {
         if (canManage && isAssignAdminOpen) {
-            fetchMembers();
+            fetchAdminAssignMembers();
         }
-    }, [canManage, isAssignAdminOpen, fetchMembers]);
+    }, [canManage, isAssignAdminOpen, fetchAdminAssignMembers]);
+
+    // Fetch members for Members tab
+    const fetchMembers = useCallback(async () => {
+        if (!club?._id) return;
+        try {
+            setMembersLoading(true);
+            const token = localStorage.getItem("codexdashtoken");
+            const params = new URLSearchParams({
+                page: membersPagination.page.toString(),
+                limit: membersPagination.limit.toString(),
+                ...(membersSearch && { search: membersSearch })
+            });
+            const response = await fetch(`${API_URL}/clubs/${club._id}/members?${params}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error("Failed to fetch members");
+            const data = await response.json();
+            if (data.success) {
+                setMembersData(data.data);
+                setMembersPagination(prev => ({ ...prev, total: data.total, pages: data.pages }));
+            }
+        } catch (err) {
+            console.error("Fetch members error:", err);
+        } finally {
+            setMembersLoading(false);
+        }
+    }, [club?._id, membersPagination.page, membersPagination.limit, membersSearch]);
+
+    useEffect(() => {
+        if (activeTab === "members" && club?._id) {
+            const timer = setTimeout(() => fetchMembers(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [activeTab, fetchMembers, club?._id]);
+
+    // Fetch events for Events tab
+    const fetchEvents = useCallback(async () => {
+        if (!club?._id) return;
+        try {
+            setEventsLoading(true);
+            const token = localStorage.getItem("codexdashtoken");
+            const params = new URLSearchParams({
+                page: eventsPagination.page.toString(),
+                limit: eventsPagination.limit.toString(),
+                clubId: club._id,
+                ...(eventsSearch && { search: eventsSearch }),
+                ...(eventsType !== "ALL" && { eventType: eventsType }),
+                ...(eventsStatus !== "ALL" && { status: eventsStatus })
+            });
+            // We use the same events endpoint, passing clubId
+            const response = await fetch(`${API_URL}/events/college/${club.college.collegeId._id || club.college.collegeId}?${params}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error("Failed to fetch events");
+            const data = await response.json();
+            if (data.success) {
+                setEventsData(data.data);
+                setEventsPagination(prev => ({ ...prev, total: data.total, pages: data.pages }));
+            }
+        } catch (err) {
+            console.error("Fetch events error:", err);
+        } finally {
+            setEventsLoading(false);
+        }
+    }, [club?._id, club?.college?.collegeId, eventsPagination.page, eventsPagination.limit, eventsSearch, eventsType, eventsStatus]);
+
+    useEffect(() => {
+        if (activeTab === "events" && club?._id) {
+            const timer = setTimeout(() => fetchEvents(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [activeTab, fetchEvents, club?._id]);
+
+    // Award reward
+    const handleAwardReward = async (e) => {
+        e.preventDefault();
+        if (!rewardForm.points || !rewardForm.title) return;
+        try {
+            setAwardingReward(true);
+            const token = localStorage.getItem("codexdashtoken");
+            const response = await fetch(`${API_URL}/admin/rewards/club/${club._id}`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ points: Number(rewardForm.points), title: rewardForm.title, reason: rewardForm.reason })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "Failed to award");
+            if (data.success) {
+                await fetchClubDetails();
+                setIsRewardDialogOpen(false);
+                setRewardForm({ points: "", title: "", reason: "" });
+            }
+        } catch (err) {
+            console.error("Award error:", err);
+            alert(err.message);
+        } finally {
+            setAwardingReward(false);
+        }
+    };
 
     const copyInviteLink = () => {
         navigator.clipboard.writeText(inviteLink);
@@ -488,15 +604,100 @@ export default function ClubDetailPage() {
                                 </>
                             )}
                         </div>
+
+                        <div className="mt-8 border-t border-white/10 pt-8">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Members Directory</h4>
+                                <div className="relative w-full md:w-64">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    <Input placeholder="Search members..." value={membersSearch} onChange={(e) => { setMembersSearch(e.target.value); setMembersPagination(p => ({ ...p, page: 1 })); }} className="pl-9 h-10 bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl" />
+                                </div>
+                            </div>
+                            
+                            {membersLoading ? (
+                                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-blue-500 animate-spin" /></div>
+                            ) : membersData.length === 0 ? (
+                                <p className="text-gray-500 text-center py-8">No other members found</p>
+                            ) : (
+                                <>
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {membersData.map((member, idx) => (
+                                            <div key={member._id || idx} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                                                    {member.avatar ? <img src={member.avatar} alt="" className="w-full h-full object-cover rounded-xl" /> : (member.fullName?.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase() || "?")}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-white font-medium text-sm truncate">{member.fullName}</h4>
+                                                    <p className="text-xs text-gray-500 truncate">{member.email}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {membersPagination.pages > 1 && (
+                                        <div className="flex items-center justify-center gap-4 mt-6">
+                                            <Button variant="outline" size="sm" disabled={membersPagination.page <= 1} onClick={() => setMembersPagination(p => ({ ...p, page: p.page - 1 }))} className="border-white/10 text-white hover:bg-white/10">Prev</Button>
+                                            <span className="text-xs text-gray-400">Page {membersPagination.page} of {membersPagination.pages}</span>
+                                            <Button variant="outline" size="sm" disabled={membersPagination.page >= membersPagination.pages} onClick={() => setMembersPagination(p => ({ ...p, page: p.page + 1 }))} className="border-white/10 text-white hover:bg-white/10">Next</Button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </TabsContent>
 
                 {/* Other Tabs Placeholders */}
-                <TabsContent value="events" className="mt-6">
-                    <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-12 text-center">
-                        <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-white mb-2">Events</h3>
-                        <p className="text-gray-500">Manage your club events here</p>
+                <TabsContent value="events" className="mt-6 space-y-6 animate-in fade-in duration-300">
+                    <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-6">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                <Input placeholder="Search events..." value={eventsSearch} onChange={(e) => { setEventsSearch(e.target.value); setEventsPagination(p => ({ ...p, page: 1 })); }} className="pl-12 h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-600 rounded-xl" />
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {["ALL", "HACKATHON", "WORKSHOP", "SEMINAR", "COMPETITION"].map(t => (
+                                    <button key={t} onClick={() => { setEventsType(t); setEventsPagination(p => ({ ...p, page: 1 })); }} className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${eventsType === t ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>{t === "ALL" ? "All Types" : t}</button>
+                                ))}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {["ALL", "PUBLISHED", "COMPLETED", "DRAFT"].map(s => (
+                                    <button key={s} onClick={() => { setEventsStatus(s); setEventsPagination(p => ({ ...p, page: 1 })); }} className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${eventsStatus === s ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>{s === "ALL" ? "All Status" : s}</button>
+                                ))}
+                            </div>
+                        </div>
+                        {eventsLoading ? (
+                            <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
+                        ) : eventsData.length === 0 ? (
+                            <div className="text-center py-12"><Calendar className="w-12 h-12 text-gray-600 mx-auto mb-3" /><p className="text-gray-500">No events found</p></div>
+                        ) : (
+                            <>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {eventsData.map((event, idx) => (
+                                        <Link key={event._id || idx} href={`/dashboard/events/${event.slug || event._id}`}>
+                                            <div className="rounded-2xl bg-white/5 border border-white/5 hover:border-blue-500/30 p-5 transition-all hover:-translate-y-1 cursor-pointer h-full">
+                                                {event.banners?.[0]?.url && <img src={event.banners[0].url} alt="" className="w-full h-32 object-cover rounded-xl mb-4" />}
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge className={event.status === 'PUBLISHED' ? 'bg-blue-500/20 text-blue-400' : event.status === 'COMPLETED' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}>{event.status}</Badge>
+                                                    <Badge className="bg-purple-500/10 text-purple-400">{event.eventType}</Badge>
+                                                </div>
+                                                <h4 className="text-white font-semibold mb-2 line-clamp-2">{event.title}</h4>
+                                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                                    <Calendar className="w-4 h-4" />
+                                                    <span>{event.startDate ? new Date(event.startDate).toLocaleDateString() : 'TBD'}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                                {eventsPagination.pages > 1 && (
+                                    <div className="flex items-center justify-center gap-4 mt-6">
+                                        <Button variant="outline" size="sm" disabled={eventsPagination.page <= 1} onClick={() => setEventsPagination(p => ({ ...p, page: p.page - 1 }))} className="border-white/10 text-white hover:bg-white/10">Previous</Button>
+                                        <span className="text-sm text-gray-400">Page {eventsPagination.page} of {eventsPagination.pages} ({eventsPagination.total} events)</span>
+                                        <Button variant="outline" size="sm" disabled={eventsPagination.page >= eventsPagination.pages} onClick={() => setEventsPagination(p => ({ ...p, page: p.page + 1 }))} className="border-white/10 text-white hover:bg-white/10">Next</Button>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
                 </TabsContent>
 
@@ -508,20 +709,60 @@ export default function ClubDetailPage() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="rewards" className="mt-6">
-                    <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-8">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-                                <Trophy className="w-5 h-5 text-yellow-400" />
-                                Rewards History
-                            </h3>
-                            <div className="text-right">
-                                <p className="text-3xl font-bold text-white">{(club.rewards?.points || 0).toLocaleString()}</p>
-                                <p className="text-sm text-gray-500">Total Points</p>
+                <TabsContent value="rewards" className="mt-6 space-y-6 animate-in fade-in duration-300">
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-8">
+                            <h3 className="text-lg font-semibold text-white mb-4">Total Points</h3>
+                            <p className="text-5xl font-bold text-white mb-2">{(club.rewards?.points || 0).toLocaleString()}</p>
+                            <Badge className={`bg-gradient-to-r ${getTierColor(club.performance?.tier || 'BRONZE')} border px-4 py-1.5 mt-2`}><Crown className="w-4 h-4 mr-2" />{club.performance?.tier || 'BRONZE'}</Badge>
+                            {canManage && (
+                                <Button onClick={() => setIsRewardDialogOpen(true)} className="w-full mt-6 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 rounded-xl"><Trophy className="w-4 h-4 mr-2" />Award Points</Button>
+                            )}
+                        </div>
+                        <div className="lg:col-span-2 rounded-3xl bg-[#0f0f0f] border border-white/10 p-8">
+                            <h3 className="text-lg font-semibold text-white mb-4">Tier Perks</h3>
+                            <div className="grid sm:grid-cols-2 gap-3">
+                                {(() => { const tiers = { BRONZE: ['Certificate of Participation', 'Community Badge'], SILVER: ['HackByteCodex Swag', 'Priority Event Access', 'LinkedIn Shoutout'], GOLD: ['Internship Eligibility', 'Letter of Recommendation', 'Paid Workshop Access'], PLATINUM: ['National Leadership Role', 'Stipend / Revenue Share', 'CSR Project Ownership'] }; return (tiers[club.performance?.tier] || tiers.BRONZE).map((perk, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/5"><CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" /><span className="text-sm text-gray-300">{perk}</span></div>
+                                )); })()}
                             </div>
                         </div>
-                        <p className="text-gray-500 text-center py-8">Rewards history will appear here</p>
                     </div>
+                    <div className="rounded-3xl bg-[#0f0f0f] border border-white/10 p-8">
+                        <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-400" />Rewards History</h3>
+                        <div className="space-y-3">
+                            {club.rewards?.history?.length > 0 ? club.rewards.history.slice().reverse().map((reward, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center"><Trophy className="w-6 h-6 text-yellow-400" /></div>
+                                        <div>
+                                            <h4 className="text-white font-medium">{reward.title}</h4>
+                                            <p className="text-sm text-gray-500">{reward.reason && <span className="text-gray-400">{reward.reason} • </span>}{new Date(reward.date).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xl font-bold text-green-400">+{reward.points}</span>
+                                </div>
+                            )) : (
+                                <p className="text-gray-500 text-center py-8">No rewards history yet</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Award Dialog */}
+                    <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
+                        <DialogContent className="bg-[#0f0f0f] border-white/10 text-white max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="text-xl flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-400" />Award Points</DialogTitle>
+                                <DialogDescription className="text-gray-400">Award reward points to {club.name}</DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleAwardReward} className="space-y-4 mt-4">
+                                <div><label className="text-sm text-gray-400 mb-1 block">Points</label><Input type="number" min="1" value={rewardForm.points} onChange={e => setRewardForm(p => ({ ...p, points: e.target.value }))} className="bg-white/5 border-white/10 text-white" placeholder="e.g. 10" required /></div>
+                                <div><label className="text-sm text-gray-400 mb-1 block">Title</label><Input value={rewardForm.title} onChange={e => setRewardForm(p => ({ ...p, title: e.target.value }))} className="bg-white/5 border-white/10 text-white" placeholder="e.g. Hackathon Winner" required /></div>
+                                <div><label className="text-sm text-gray-400 mb-1 block">Reason (optional)</label><Input value={rewardForm.reason} onChange={e => setRewardForm(p => ({ ...p, reason: e.target.value }))} className="bg-white/5 border-white/10 text-white" placeholder="e.g. Won first place at..." /></div>
+                                <Button type="submit" disabled={awardingReward} className="w-full bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl">{awardingReward ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trophy className="w-4 h-4 mr-2" />}{awardingReward ? 'Awarding...' : 'Award Points'}</Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
             </Tabs>
 
@@ -603,22 +844,22 @@ export default function ClubDetailPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                 <Input
                                     placeholder="Search members..."
-                                    value={membersSearch}
-                                    onChange={(e) => setMembersSearch(e.target.value)}
+                                    value={adminAssignMembersSearch}
+                                    onChange={(e) => setAdminAssignMembersSearch(e.target.value)}
                                     className="pl-10 bg-white/5 border-white/10 text-white"
                                 />
                             </div>
 
                             <ScrollArea className="max-h-[300px]">
                                 <div className="space-y-2">
-                                    {membersLoading ? (
+                                    {adminAssignMembersLoading ? (
                                         <div className="flex items-center justify-center py-8">
                                             <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
                                         </div>
-                                    ) : members.length === 0 ? (
+                                    ) : adminAssigMembers.length === 0 ? (
                                         <p className="text-gray-500 text-center py-8">No eligible members found</p>
                                     ) : (
-                                        members.map((member, idx) => (
+                                        adminAssigMembers.map((member, idx) => (
                                             <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
                                                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold text-white">
                                                     {member.fullName?.split(" ").map(n => n[0]).join("") || "M"}
