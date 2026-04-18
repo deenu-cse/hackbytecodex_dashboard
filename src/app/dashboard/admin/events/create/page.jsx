@@ -90,7 +90,7 @@ export default function AdminCreateEventPage() {
         location: "",
         mode: "",
         registration: {
-            isOpen: true,
+            isOpen: false,
             lastDate: "",
             limit: "",
             fee: 0,
@@ -759,6 +759,7 @@ export default function AdminCreateEventPage() {
                                     <Input type="datetime-local" value={formData.registration.lastDate}
                                         onChange={(e) => updateRegistrationData("lastDate", e.target.value)}
                                         className="mt-2 h-12 bg-white/5 border-white/10 text-white rounded-xl [color-scheme:dark]" />
+                                    {errors.lastDate && <p className="mt-2 text-sm text-red-400">{errors.lastDate}</p>}
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
