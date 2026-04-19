@@ -184,9 +184,20 @@ export default function AdminEventsPage() {
                                 <div className="p-6">
                                     <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
                                     <p className="text-gray-400 text-sm line-clamp-2 mb-4">{event.description}</p>
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
+                                    <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                                         <span>{new Date(event.startDate).toLocaleDateString()}</span>
                                         <span>{event.mode}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-yellow-400 text-sm">★</span>
+                                            <span className="text-white text-sm font-medium">
+                                                {event.performance?.rating || "N/A"}
+                                            </span>
+                                        </div>
+                                        <span className="text-gray-400 text-xs">
+                                            ({event.participantsCount || 0} participants)
+                                        </span>
                                     </div>
                                 </div>
                             </div>
